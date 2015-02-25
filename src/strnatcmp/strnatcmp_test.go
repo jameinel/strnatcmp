@@ -143,12 +143,7 @@ func (s *StrNatCmpSuite) DONTTestCorpus(c *gc.C) {
 	}
 }
 
-var longPrefix = ""
-
-func makeLongNumberString() string {
-	if longPrefix != "" {
-		return longPrefix
-	}
+func makeLongNumberString(sep string) string {
 	parts := []string{"start"}
 	for i := 0; i < 1000; i++ {
 		parts = append(parts, fmt.Sprintf("%d", i))
@@ -157,11 +152,23 @@ func makeLongNumberString() string {
 	for i := 0; i < 1000; i++ {
 		parts = append(parts, fmt.Sprintf("%d", i+500))
 	}
-	return strings.Join(parts, "")
+	return strings.Join(parts, sep)
 }
 
 func (s *StrNatCmpSuite) BenchmarkCompareLongStrings(c *gc.C) {
-	start := makeLongNumberString()
+	start := makeLongNumberString("")
+	longA := start + "a"
+	longB := start + "b"
+	for i := 0; i < c.N; i++ {
+		c.Assert(Compare(longA, longB), gc.Equals, -1)
+		c.Assert(Compare(longB, longA), gc.Equals, 1)
+		c.Assert(Compare(longA, longA), gc.Equals, 0)
+		c.Assert(Compare(longB, longB), gc.Equals, 0)
+	}
+}
+
+func (s *StrNatCmpSuite) BenchmarkLotsOfParts(c *gc.C) {
+	start := makeLongNumberString(".")
 	longA := start + "a"
 	longB := start + "b"
 	for i := 0; i < c.N; i++ {
