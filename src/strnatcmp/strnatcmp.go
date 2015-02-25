@@ -2,11 +2,20 @@ package strnatcmp
 
 // isSpace is the Latin subset of unicode.IsSpace
 func isSpace(c uint8) bool {
-	switch c {
-	case '\t', '\n', '\v', '\f', '\r', ' ', 0x85, 0xA0:
-		return true
-	}
-	return false
+	// Original function used a switch statement, but switch can't be
+	// inlined in go-1.2
+	return (c == ' ' ||
+		c == '\t' ||
+		c == '\n' ||
+		c == '\v' ||
+		c == '\r' ||
+		c == 0x85 ||
+		c == 0xA0)
+}
+
+// isDigit is the same as unicode.IsDigit() for Latin characters.
+func isDigit(c uint8) bool {
+	return '0' <= c && c <= '9'
 }
 
 // nextDigit returns the value of the next character, and whether it is a digit
@@ -15,13 +24,28 @@ func nextDigit(s string, i int) (uint8, bool) {
 		c := s[i]
 		// we only handle latin digits, but this gets tricky if you
 		// start considering non-latin numbers.
-		return c, '0' <= c && c <= '9'
+		return c, isDigit(c)
 	}
 	return 0, false
 }
 
+// nextDigitNoSpace returns the value of the next character ignoring spaces. It
+// also increments the counter if it has to skip a space character.
+func nextDigitNoSpace(s string, i *int) (uint8, bool) {
+	var c uint8
+	for *i < len(s) {
+		c := s[*i]
+		if !isSpace(c) {
+			break
+		}
+		(*i)++
+	}
+	return c, isDigit(c)
+}
+
 // compareDigits considers the current text as a number, and compares them.
-// The longest run of digits wins, as it is clearly larger. However, if we get the same number of characters, then we have to consider
+// The longest run of digits wins, as it is clearly larger. However, if we get
+// the same number of characters, then we have to consider
 func compareDigits(a string, ai int, b string, bi int) int {
 	var bias int = 0
 	for {
@@ -90,6 +114,8 @@ func Compare(a, b string) int {
 	ai := 0
 	bi := 0
 	for {
+		//char_a, a_digit := nextDigitNoSpace(a, &ai)
+		//char_b, b_digit := nextDigitNoSpace(b, &bi)
 		char_a, a_digit := nextDigit(a, ai)
 		for isSpace(char_a) {
 			ai++
@@ -128,5 +154,4 @@ func Compare(a, b string) int {
 		ai++
 		bi++
 	}
-	return 0
 }
