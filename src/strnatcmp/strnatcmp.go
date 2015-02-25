@@ -34,7 +34,7 @@ func nextDigit(s string, i int) (uint8, bool) {
 func nextDigitNoSpace(s string, i *int) (uint8, bool) {
 	var c uint8
 	for *i < len(s) {
-		c := s[*i]
+		c = s[*i]
 		if !isSpace(c) {
 			break
 		}
@@ -114,18 +114,8 @@ func Compare(a, b string) int {
 	ai := 0
 	bi := 0
 	for {
-		//char_a, a_digit := nextDigitNoSpace(a, &ai)
-		//char_b, b_digit := nextDigitNoSpace(b, &bi)
-		char_a, a_digit := nextDigit(a, ai)
-		for isSpace(char_a) {
-			ai++
-			char_a, a_digit = nextDigit(a, ai)
-		}
-		char_b, b_digit := nextDigit(b, bi)
-		for isSpace(char_b) {
-			bi++
-			char_b, b_digit = nextDigit(b, bi)
-		}
+		char_a, a_digit := nextDigitNoSpace(a, &ai)
+		char_b, b_digit := nextDigitNoSpace(b, &bi)
 		if a_digit && b_digit {
 			if char_a == '0' || char_b == '0' {
 				// one of these is 0 padded, so just do

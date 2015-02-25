@@ -1,6 +1,8 @@
 package strnatcmp
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 
 	gc "gopkg.in/check.v1"
@@ -44,6 +46,7 @@ func (s *StrNatCmpSuite) TestCompareWithInt(c *gc.C) {
 	s.checkLess(c, "a121", "a1111")
 	s.checkLess(c, "a121", "a1131")
 	s.checkLess(c, "a113", "a121")
+	s.checkLess(c, "a12345a", "a12345b")
 }
 
 func (s *StrNatCmpSuite) TestWithLeadingZeros(c *gc.C) {
@@ -53,8 +56,7 @@ func (s *StrNatCmpSuite) TestWithLeadingZeros(c *gc.C) {
 	s.checkLess(c, "a02", "a1")
 	s.checkLess(c, "a1.2", "a1.3")
 	s.checkLess(c, "a1.02", "a1.3")
-	// I think it actually gets this wrong
-	s.checkLess(c, "a1.04", "a1.30")
+	s.checkLess(c, "a1.04", "a1.3")
 }
 
 func (s *StrNatCmpSuite) TestIgnoreSpaces(c *gc.C) {
@@ -119,5 +121,30 @@ func (s *StrNatCmpSuite) TestCorpus(c *gc.C) {
 		for _, b := range corpus[i+1:] {
 			s.checkLess(c, a, b)
 		}
+	}
+}
+
+var longPrefix = ""
+
+func makeLongNumberString() string {
+	if longPrefix != "" {
+		return longPrefix
+	}
+	parts := []string{"start"}
+	for i := 0; i < 1000; i++ {
+		parts = append(parts, fmt.Sprintf("%d", i))
+	}
+	return strings.Join(parts, "")
+}
+
+func (s *StrNatCmpSuite) BenchmarkCompareLongStrings(c *gc.C) {
+	start := makeLongNumberString()
+	longA := start + "a"
+	longB := start + "b"
+	for i := 0; i < c.N; i++ {
+		c.Assert(Compare(longA, longB), gc.Equals, -1)
+		c.Assert(Compare(longB, longA), gc.Equals, 1)
+		c.Assert(Compare(longA, longA), gc.Equals, 0)
+		c.Assert(Compare(longB, longB), gc.Equals, 0)
 	}
 }
