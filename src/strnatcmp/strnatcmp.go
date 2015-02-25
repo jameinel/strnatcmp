@@ -43,17 +43,29 @@ func nextDigitNoSpace(s string, i *int) (uint8, bool) {
 	return c, isDigit(c)
 }
 
-// compareDigits considers the current text as a number, and compares them.
+// compareNumber considers the current text as a number, and compares them.
 // The longest run of digits wins, as it is clearly larger. However, if we get
-// the same number of characters, then we have to consider
-func compareDigits(a string, ai int, b string, bi int) int {
+// the same number of characters, then we have to consider the actual values.
+// As we walk the characters we notice the first time they don't match, and
+// which side has the larger value.
+// This returns the comparison, and how many characters were evaluated if they are equal.
+func compareNumber(a string, ai *int, b string, bi *int) int {
 	var bias int = 0
+	// ignore leading zeros if we aren't in a fraction
+	char_a, a_digit := nextDigit(a, *ai)
+	for char_a == '0' {
+		(*ai)++
+		char_a, a_digit = nextDigit(a, *ai)
+	}
+	char_b, b_digit := nextDigit(b, *bi)
+	for char_b == '0' {
+		(*bi)++
+		char_b, b_digit = nextDigit(b, *bi)
+	}
 	for {
 		// We don't need to check if ai or bi is off the end of the
 		// string, because one of them won't be a digit, which
 		// guarantees a return from this function.
-		char_a, a_digit := nextDigit(a, ai)
-		char_b, b_digit := nextDigit(b, bi)
 		if !a_digit && !b_digit {
 			// both are no longer digits at the same time, so we
 			// just return whatever bias we have observed.
@@ -72,15 +84,19 @@ func compareDigits(a string, ai int, b string, bi int) int {
 				bias = 1
 			}
 		}
-		ai++
-		bi++
+		(*ai)++
+		char_a, a_digit = nextDigit(a, *ai)
+		(*bi)++
+		char_b, b_digit = nextDigit(b, *bi)
 	}
 }
 
 // compareFractional handles when numbers start with a 0, to handle fractional
 // decimals.  (1.01 is longer than 1.2, but comes before 1.2).
-func compareFractional(a string, ai int, b string, bi int) int {
+// returns the comparison, and the number of characters evaluated
+func compareFractional(a string, ai int, b string, bi int) (int, int) {
 	// We just treat the first value to be larger as winning
+	start := ai
 	for {
 		// We don't need to check if ai or bi is off the end of the
 		// string, because one of them won't be a digit, which
@@ -89,17 +105,17 @@ func compareFractional(a string, ai int, b string, bi int) int {
 		char_b, b_digit := nextDigit(b, bi)
 		if !a_digit && !b_digit {
 			// Same length, and no differences
-			return 0
+			return 0, ai - start
 		} else if !a_digit {
 			// no more digits in a, b has at least 1 extra digit
-			return -1
+			return -1, ai - start
 		} else if !b_digit {
 			// no more digits in b, a has at least 1 extra digit
-			return 1
+			return 1, ai - start
 		} else if char_a < char_b {
-			return -1
+			return -1, ai - start
 		} else if char_a > char_b {
-			return 1
+			return 1, ai - start
 		}
 		ai++
 		bi++
@@ -111,25 +127,34 @@ func compareFractional(a string, ai int, b string, bi int) int {
 // numerically, rather than alphabetically. So
 // foo10 comes after foo1 and foo2, rather than between them.
 func Compare(a, b string) int {
+	fractional := false
 	ai := 0
 	bi := 0
 	for {
 		char_a, a_digit := nextDigitNoSpace(a, &ai)
 		char_b, b_digit := nextDigitNoSpace(b, &bi)
 		if a_digit && b_digit {
-			if char_a == '0' || char_b == '0' {
-				// one of these is 0 padded, so just do
-				// longest-run-wins
-				res := compareFractional(a, ai, b, bi)
+			if fractional {
+				res, count := compareFractional(a, ai, b, bi)
 				if res != 0 {
 					return res
 				}
+				fractional = false
+				ai += count
+				bi += count
+				continue
 			} else {
-				res := compareDigits(a, ai, b, bi)
+				res := compareNumber(a, &ai, b, &bi)
 				if res != 0 {
 					return res
 				}
+				continue
 			}
+		}
+		if char_a == '.' && char_b == '.' {
+			fractional = true
+		} else {
+			fractional = false
 		}
 		if char_a < char_b {
 			return -1
