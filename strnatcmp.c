@@ -62,6 +62,7 @@ nat_toupper(nat_char a)
 
 
 
+static long long right_calls = 0;
 static int
 compare_right(nat_char const *a, nat_char const *b)
 {
@@ -71,6 +72,7 @@ compare_right(nat_char const *a, nat_char const *b)
 	value wins, but we can't know that it will until we've scanned
 	both numbers to know that they have the same magnitude, so we
 	remember it in BIAS. */
+     right_calls++;
      for (;; a++, b++) {
 	  if (!nat_isdigit(*a)  &&  !nat_isdigit(*b))
 	       return bias;
@@ -92,11 +94,13 @@ compare_right(nat_char const *a, nat_char const *b)
 }
 
 
+static long long left_calls = 0;
 static int
 compare_left(nat_char const *a, nat_char const *b)
 {
      /* Compare two left-aligned numbers: the first to have a
         different value wins. */
+     left_calls++;
      for (;; a++, b++) {
 	  if (!nat_isdigit(*a)  &&  !nat_isdigit(*b))
 	       return 0;
@@ -175,4 +179,8 @@ int strnatcmp(nat_char const *a, nat_char const *b) {
 /* Compare, recognizing numeric string and ignoring case. */
 int strnatcasecmp(nat_char const *a, nat_char const *b) {
      return strnatcmp0(a, b, 1);
+}
+
+void strnatprintcalls() {
+	fprintf(stdout, "Left: %d\nRight: %d\n", left_calls, right_calls);
 }
