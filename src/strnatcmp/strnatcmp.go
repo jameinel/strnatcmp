@@ -1,5 +1,9 @@
 package strnatcmp
 
+import (
+	"sort"
+)
+
 // isSpace is the Latin subset of unicode.IsSpace
 func isSpace(c uint8) bool {
 	// Original function used a switch statement, but switch can't be
@@ -169,4 +173,14 @@ func Compare(a, b string) int {
 		ai++
 		bi++
 	}
+}
+
+type NaturalSortStrings []string
+
+func (n NaturalSortStrings) Len() int           { return len(n) }
+func (n NaturalSortStrings) Less(i, j int) bool { return Compare(n[i], n[j]) < 0 }
+func (n NaturalSortStrings) Swap(i, j int)      { n[i], n[j] = n[j], n[i] }
+
+func SortStrings(a []string) {
+	sort.Sort(NaturalSortStrings(a))
 }

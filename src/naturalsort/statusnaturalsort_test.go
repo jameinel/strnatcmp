@@ -4,15 +4,20 @@
 package main
 
 import (
+	"fmt"
+	"math/rand"
 	"sort"
+	"strings"
+	"testing"
 
 	gc "gopkg.in/check.v1"
-
-	"github.com/juju/juju/testing"
 )
 
 type naturalSortSuite struct {
-	testing.BaseSuite
+}
+
+func TestAll(t *testing.T) {
+	gc.TestingT(t)
 }
 
 var _ = gc.Suite(&naturalSortSuite{})
@@ -120,7 +125,7 @@ func (s *naturalSortSuite) assertNaturallySort(c *gc.C, sample, expected []strin
 	c.Assert(sample, gc.DeepEquals, expected)
 }
 
-func makeLongNumberString(sep string) string {
+func makeParts() []string {
 	parts := []string{"start"}
 	for i := 0; i < 1000; i++ {
 		parts = append(parts, fmt.Sprintf("%d", i))
@@ -129,23 +134,36 @@ func makeLongNumberString(sep string) string {
 	for i := 0; i < 1000; i++ {
 		parts = append(parts, fmt.Sprintf("%d", i+500))
 	}
+	return parts
+}
+
+func makeLongNumberString(sep string) string {
+	parts := makeParts()
 	return strings.Join(parts, sep)
 }
 
-func (s *naturalSortSuite) BenchmarkCompareLongStrings(c *gc.C) {
+func (s *naturalSortSuite) BenchmarkSortLongStrings(c *gc.C) {
 	start := makeLongNumberString("")
-	longA := start + "a"
-	longB := start + "b"
 	for i := 0; i < c.N; i++ {
-		sort.Sort(naturally([]string{longA, longB}))
+		sort.Sort(naturally([]string{start + "a", start + "b"}))
 	}
 }
 
-func (s *naturalSortSuite) BenchmarkLotsOfParts(c *gc.C) {
+func (s *naturalSortSuite) BenchmarkSortLotsOfParts(c *gc.C) {
 	start := makeLongNumberString(".")
-	longA := start + "a"
-	longB := start + "b"
 	for i := 0; i < c.N; i++ {
-		sort.Sort(naturally([]string{longA, longB}))
+		sort.Sort(naturally([]string{start + "a", start + "b"}))
+	}
+}
+
+func (s *naturalSortSuite) BenchmarkSortManyStrings(c *gc.C) {
+	parts := makeParts()
+	unsorted := make([]string, 0, len(parts))
+	for _, i := range rand.Perm(len(parts)) {
+		unsorted = append(unsorted, parts[i])
+	}
+	for i := 0; i < c.N; i++ {
+		sorting := append([]string{}, unsorted...)
+		sort.Sort(naturally(sorting))
 	}
 }

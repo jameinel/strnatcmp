@@ -2,6 +2,7 @@ package strnatcmp
 
 import (
 	"fmt"
+	"math/rand"
 	"strings"
 	"testing"
 
@@ -143,7 +144,7 @@ func (s *StrNatCmpSuite) DONTTestCorpus(c *gc.C) {
 	}
 }
 
-func makeLongNumberString(sep string) string {
+func makeParts() []string {
 	parts := []string{"start"}
 	for i := 0; i < 1000; i++ {
 		parts = append(parts, fmt.Sprintf("%d", i))
@@ -152,6 +153,11 @@ func makeLongNumberString(sep string) string {
 	for i := 0; i < 1000; i++ {
 		parts = append(parts, fmt.Sprintf("%d", i+500))
 	}
+	return parts
+}
+
+func makeLongNumberString(sep string) string {
+	parts := makeParts()
 	return strings.Join(parts, sep)
 }
 
@@ -167,7 +173,7 @@ func (s *StrNatCmpSuite) BenchmarkCompareLongStrings(c *gc.C) {
 	}
 }
 
-func (s *StrNatCmpSuite) BenchmarkLotsOfParts(c *gc.C) {
+func (s *StrNatCmpSuite) BenchmarkCompareLotsOfParts(c *gc.C) {
 	start := makeLongNumberString(".")
 	longA := start + "a"
 	longB := start + "b"
@@ -176,5 +182,31 @@ func (s *StrNatCmpSuite) BenchmarkLotsOfParts(c *gc.C) {
 		c.Assert(Compare(longB, longA), gc.Equals, 1)
 		c.Assert(Compare(longA, longA), gc.Equals, 0)
 		c.Assert(Compare(longB, longB), gc.Equals, 0)
+	}
+}
+
+func (s *StrNatCmpSuite) BenchmarkSortLongStrings(c *gc.C) {
+	start := makeLongNumberString("")
+	for i := 0; i < c.N; i++ {
+		SortStrings([]string{start + "a", start + "b"})
+	}
+}
+
+func (s *StrNatCmpSuite) BenchmarkSortLotsOfParts(c *gc.C) {
+	start := makeLongNumberString(".")
+	for i := 0; i < c.N; i++ {
+		SortStrings([]string{start + "a", start + "b"})
+	}
+}
+
+func (s *StrNatCmpSuite) BenchmarkSortManyStrings(c *gc.C) {
+	parts := makeParts()
+	unsorted := make([]string, 0, len(parts))
+	for _, i := range rand.Perm(len(parts)) {
+		unsorted = append(unsorted, parts[i])
+	}
+	for i := 0; i < c.N; i++ {
+		sorting := append([]string{}, unsorted...)
+		SortStrings(sorting)
 	}
 }
